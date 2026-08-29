@@ -8,51 +8,58 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: backend
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install backend dependencies
-        working-directory: backend
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run pytest
-        working-directory: backend
-        env:
-          PYTHONPATH: .
-        run: python -m pytest -q
+        run: PYTHONPATH=. pytest -q
 
   frontend:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: frontend
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        working-directory: frontend
+      - name: Install dependencies
         run: npm ci
 
       - name: Build frontend
-        working-directory: frontend
         run: npm run build
 
   containers:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build API Docker image
+      - name: Build backend image
         run: docker build -t sentinelai-api ./backend
 
-      - name: Build frontend Docker image
+      - name: Build frontend image
         run: docker build -t sentinelai-ui ./frontend

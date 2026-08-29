@@ -12,9 +12,6 @@ jobs:
       run:
         working-directory: backend
 
-    env:
-      PYTHONPATH: ${{ github.workspace }}/backend
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +25,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run pytest
-        run: pytest -q
+        run: PYTHONPATH=. python -m pytest -q
 
   frontend:
     runs-on: ubuntu-latest

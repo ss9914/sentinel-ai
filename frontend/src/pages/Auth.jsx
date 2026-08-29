@@ -1,0 +1,9 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../services/api";
+
+export default function Auth({ register = false }) {
+  const [form, setForm] = useState({ username: "", email: "", password: "" }); const [error, setError] = useState(""); const [loading, setLoading] = useState(false); const navigate = useNavigate();
+  async function submit(e) { e.preventDefault(); setLoading(true); setError(""); try { const body = register ? form : { username: form.username, password: form.password }; const { data } = await api.post(`/auth/${register ? "register" : "login"}`, body); localStorage.setItem("sentinel_token", data.access_token); navigate("/dashboard"); } catch (err) { setError(err.response?.data?.detail || "Unable to authenticate."); } finally { setLoading(false); } }
+  return <main className="auth"><form className="auth-card" onSubmit={submit}><div className="brand"><span>◈</span><h1>SentinelAI</h1></div><p>{register ? "Create your monitoring workspace." : "Sign in to your operations console."}</p>{error && <div className="error">{error}</div>}<label>Username<input required minLength="3" value={form.username} onChange={(e) => setForm({...form, username:e.target.value})} /></label>{register && <label>Email<input required type="email" value={form.email} onChange={(e) => setForm({...form, email:e.target.value})} /></label>}<label>Password<input required minLength="8" type="password" value={form.password} onChange={(e) => setForm({...form, password:e.target.value})} /></label><button disabled={loading}>{loading ? "Please wait…" : register ? "Create account" : "Sign in"}</button><p className="switch">{register ? "Already have an account?" : "New to SentinelAI?"} <Link to={register ? "/login" : "/register"}>{register ? "Sign in" : "Create one"}</Link></p></form></main>;
+}

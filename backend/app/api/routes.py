@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
+import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -9,9 +10,18 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.database.session import get_db
 from app.models import Alert, ApplicationLog, Incident, User
 from app.schemas.contracts import AlertRead, DashboardSummary, IncidentRead, IncidentUpdate, LogCreate, LogRead, Page, Token, UserCreate, UserLogin
-from app.services.broker import enqueue_log
+from app.services.processing import process_log
 
 router = APIRouter(prefix="/api/v1")
+logger = logging.getLogger(__name__)
+
+
+def process_log_in_background(log_id: int) -> None:
+    """Run detection in the API service when no separate worker is deployed."""
+    try:
+        process_log(log_id)
+    except Exception:
+        logger.exception("Unable to process log %s", log_id)
 
 
 @router.post("/auth/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -38,15 +48,12 @@ def page_response(query, model, page: int, page_size: int, db: Session) -> Page:
 
 
 @router.post("/logs", response_model=LogRead, status_code=status.HTTP_201_CREATED)
-def ingest_log(data: LogCreate, db: Session = Depends(get_db), _: User = Depends(current_user)):
+def ingest_log(data: LogCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), _: User = Depends(current_user)):
     payload = data.model_dump(exclude={"timestamp"}, exclude_none=True)
     payload["level"] = data.level.upper()
     log = ApplicationLog(**payload, timestamp=data.timestamp or datetime.now(timezone.utc))
     db.add(log); db.commit(); db.refresh(log)
-    try: enqueue_log(log.id)
-    except Exception as exc:
-        # Persistence is preserved, but return clear transient failure so source can retry safely.
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Log saved but queue is unavailable") from exc
+    background_tasks.add_task(process_log_in_background, log.id)
     return log
 
 

@@ -9,6 +9,7 @@ services:
     name: ss9914-sentinelai-api
     runtime: docker
     region: singapore
+    plan: free
     dockerContext: ./backend
     healthCheckPath: /health
     envVars:
@@ -25,27 +26,10 @@ services:
       - key: CORS_ORIGINS
         value: https://ss9914-sentinelai-web.onrender.com
 
-  - type: worker
-    name: ss9914-sentinelai-worker
-    runtime: docker
-    region: singapore
-    dockerContext: ./backend
-    dockerCommand: python -m app.workers.worker
-    envVars:
-      - fromGroup: sentinelai-shared
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ss9914-sentinelai-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: ss9914-sentinelai-redis
-          property: connectionString
-
   - type: keyvalue
     name: ss9914-sentinelai-redis
     region: singapore
+    plan: free
     ipAllowList: []
     maxmemoryPolicy: noeviction
 

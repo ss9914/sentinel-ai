@@ -10,7 +10,7 @@ def test_registration_login_and_protection(client):
 
 
 def test_log_ingestion_pagination_and_summary(client, auth_headers, monkeypatch):
-    monkeypatch.setattr("app.api.routes.enqueue_log", lambda _log_id: None)
+    monkeypatch.setattr("app.api.routes.process_log", lambda _log_id: None)
     log = {"level":"INFO", "service":"orders", "message":"Order completed", "latency_ms": 45}
     response = client.post("/api/v1/logs", json=log, headers=auth_headers)
     assert response.status_code == 201

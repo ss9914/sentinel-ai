@@ -1,5 +1,5 @@
 # SentinelAI
-
+LIVE DEMO: https://ss9914-sentinelai-web.onrender.com
 SentinelAI is a real-time incident detection platform for application logs. It persists every event, learns normal service behavior with Isolation Forest, creates incidents for unusual activity, and pushes alerts to a React operations console without refreshes.
 
 ## Problem and features
